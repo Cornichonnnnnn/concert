@@ -77,6 +77,7 @@ class Camera(base.Camera):
         from gi.repository import GObject, GLib, Uca
 
         self._manager = Uca.PluginManager()
+        self._name = name
 
         params = params if params else {}
 
@@ -155,9 +156,9 @@ class Camera(base.Camera):
         self._record_dtype = None
 
     def _get_state(self):
-        if self.uca.is_readout():
+        if self.is_readout:
             return 'readout'
-        if self.uca.is_recording():
+        if self.is_recording:
             return 'recording'
         else:
             return 'standby'
@@ -194,11 +195,17 @@ class Camera(base.Camera):
     def _record_real(self):
         self._record_shape = self.roi_height.magnitude, self.roi_width.magnitude
         self._record_dtype = np.uint16 if self.sensor_bitdepth.magnitude > 8 else np.uint8
-        self.uca.start_recording()
+        if self._name == "net":
+            self.uca.do_start_recording(self.uca)
+        else:
+            self.uca.start_recording()
 
     @_translate_gerror
     def _stop_real(self):
-        self.uca.stop_recording()
+        if self._name == "net":
+            self.uca.do_stop_recording(self.uca)
+        else:
+            self.uca.stop_recording()
 
     @_translate_gerror
     def _trigger_real(self):
